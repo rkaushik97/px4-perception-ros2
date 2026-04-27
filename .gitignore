@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# YOLO weight files (download at runtime)
+*.pt
