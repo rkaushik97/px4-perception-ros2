@@ -221,6 +221,7 @@ __marimo__/
 build/
 install/
 log/
+yolo_env/
 
 # YOLO weight files (download at runtime)
 *.pt

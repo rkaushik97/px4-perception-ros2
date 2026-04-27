@@ -1,0 +1,38 @@
+# docker-compose.override.yml
+#
+# Layers the px4-perception-ros2 image, NVIDIA GPU access, and a host
+# bind-mount of this repo onto the upstream px4-sim service.
+#
+# Drop (or symlink) this file next to px4-sim's docker-compose.yml. Compose
+# merges override files automatically, so `docker compose up` picks it up
+# with no extra flags.
+#
+# Layout assumption: px4-sim and px4-perception-ros2 are SIBLING clones,
+# e.g. both under ~/project/. The relative paths below resolve correctly
+# from inside the px4-sim directory.
+
+services:
+  px4-sitl:
+    # Build this repo's Dockerfile against its own root as the build context.
+    build:
+      context: ../px4-perception-ros2
+      dockerfile: docker/Dockerfile
+    image: px4-perception:latest
+
+    # NVIDIA GPU access. Requires the NVIDIA Container Toolkit on the host
+    # (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/).
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+
+    # Bind-mount the project so host edits show up live in the container.
+    volumes:
+      - ../px4-perception-ros2:/root/px4-perception-ros2:rw

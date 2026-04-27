@@ -1,0 +1,16 @@
+# Python packages installed inside the project Docker container.
+#
+# These are baked in by docker/Dockerfile — there is no host-side venv.
+# The file is here for documentation and tooling (dependabot, scanners) only;
+# `pip install -r requirements.txt` is NOT part of the install path.
+#
+# Notes:
+#   - torch / torchvision must come from the PyTorch CUDA 12.4 wheel index
+#     (https://download.pytorch.org/whl/cu124) for actual GPU support.
+#   - numpy is pinned <2 because cv_bridge in ROS2 Jazzy was built against
+#     the numpy 1.x ABI and segfaults under numpy 2.x.
+
+torch==2.5.1
+torchvision==0.20.1
+ultralytics
+numpy<2
