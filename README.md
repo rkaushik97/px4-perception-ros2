@@ -2,8 +2,7 @@
 
 Real-time YOLOv8 object detection on a simulated drone's forward-facing
 camera, running end-to-end on PX4 SITL + Gazebo Harmonic + ROS2 Jazzy
-inside a GPU-enabled Docker container. Submitted as **Aufgabe 1: Object
-Detection with YOLO** for the DevOps coursework.
+inside a GPU-enabled Docker container.
 
 The pipeline subscribes to the quadcopter's onboard camera, runs YOLOv8
 inference on every frame, and publishes both a structured detection list
@@ -14,9 +13,9 @@ live in `rqt_image_view`.
 
 ## Demo
 
-![YOLOv8 detections on the simulated drone's camera feed — 2 persons, 2 cars, and 1 truck identified in a single frame.](media/yolo_perception_demo.png)
+![YOLOv8 detections on the simulated drone's camera feed](media/yolo_perception_demo.png)
 
-*Five detections in a single frame from the simulated `x500_mono_cam`
+*Detections in a single frame from the simulated `x500_mono_cam`
 quadcopter: two persons, two cars, and one truck, with class labels and
 confidence scores rendered on top of the published `/yolo/annotated_image`
 topic.*
@@ -55,11 +54,6 @@ topic.*
                                                                           ▼
                                                                   rqt_image_view
 ```
-
-The camera on the `x500_mono_cam` airframe points forward with a small
-fixed downward tilt, so cruise altitude footage frames the ground objects
-that the test scene spawns ahead of the drone.
-
 ---
 
 ## Features
@@ -83,14 +77,10 @@ that the test scene spawns ahead of the drone.
 
 ## Prerequisites
 
-- **Docker** (24.x or newer) with the **Compose v2 plugin**.
-- **NVIDIA GPU + driver + NVIDIA Container Toolkit** — verified by
-  `docker run --rm --runtime=nvidia nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi`.
-- **~30 GB free disk** for the base image, model weights, and Gazebo Fuel
-  models the simulator caches at runtime.
-- A modern browser for noVNC.
+- **Docker**
+- **NVIDIA GPU + driver + NVIDIA Container Toolkit**
 
-This project was developed on a remote H100 server reached over SSH; the
+ The
 noVNC entry point exposed by the px4-sim base image at port `6080` makes
 the Gazebo and rqt windows usable inside an ordinary browser tab.
 
@@ -113,7 +103,7 @@ ln -s ../px4-perception-ros2/docker/docker-compose.override.yml .
 
 # 3. Build the upstream image, then build + start ours.
 #    First run pulls the base image and installs torch + ultralytics + numpy<2;
-#    expect ~5 minutes and a final image size of ~31 GB.
+
 ./build.sh --all
 docker compose up -d
 
@@ -121,23 +111,6 @@ docker compose up -d
 docker exec -it px4_sitl bash -lc \
   'source /opt/ros/jazzy/setup.bash && cd /root/px4-perception-ros2/ros2_ws && colcon build'
 ```
-
-Quick smoke test — confirm CUDA is wired up before launching anything:
-
-```bash
-docker exec px4_sitl python3 -c \
-  'import torch; print("CUDA:", torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else "")'
-# CUDA: True NVIDIA H100 NVL
-```
-
-Open the noVNC desktop in a browser at `http://localhost:6080`. On a
-remote host, forward the port first (VS Code's *Ports* panel makes this
-one-click, or `ssh -L 6080:localhost:6080 host`).
-
-The override file uses relative paths (`../px4-perception-ros2`), so as
-long as the two repos sit side by side, no host path is hard-coded
-anywhere — the same `docker-compose.override.yml` works for any user.
-
 ---
 
 ## Running the pipeline
@@ -152,8 +125,6 @@ later in the list assume earlier ones are alive.
 cd /root/PX4-Autopilot
 make px4_sitl gz_x500_mono_cam
 ```
-
-Wait until the prompt drops to `pxh>`. Gazebo opens in the noVNC window.
 
 ```text
 INFO  [init] found model autostart file as SYS_AUTOSTART=4010
@@ -172,10 +143,6 @@ pxh>
 ros2 run ros_gz_image image_bridge \
   /world/default/model/x500_mono_cam_0/link/camera_link/sensor/camera/image
 ```
-
-The bridge prints nothing on success — it just proxies frames. Verify it
-from another terminal with
-`ros2 topic hz /world/default/.../image` (~21 Hz expected).
 
 **Terminal 3 — YOLO detector node**
 
@@ -300,16 +267,6 @@ float32 inference_latency_ms
 float32 image_width
 float32 image_height
 ```
-
-### Why ament_cmake and not ament_python
-
-ROS2's `rosidl` message generator only runs from `ament_cmake` packages —
-there is no Python-only path for declaring `.msg` files in Jazzy. The
-project is therefore split into two packages: `perception_msgs`
-(ament_cmake, exposes the generated `Detection` / `DetectionArray` types
-to both Python and C++ consumers) and `yolo_detector` (ament_python,
-imports the messages and runs the inference loop).
-
 ---
 
 ## Performance
@@ -360,7 +317,7 @@ px4-perception-ros2/
 
 ---
 
-## Implementation notes / gotchas
+## Implementation notes
 
 These are the non-obvious things that bit during development. The
 Dockerfile and run scripts already handle them — they're documented here
